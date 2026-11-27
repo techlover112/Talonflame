@@ -17,11 +17,13 @@
 */
 
 #include "accounts.h"
+#include "bootstatus.h"
 #include "ipx_config.h"
 #include "tlnf_config.h"
 #include "ui.h"
 
 #include <coreinit/mcp.h>
+#include <sysapp/launch.h>
 #include <vpad/input.h>
 #include <whb/proc.h>
 
@@ -47,10 +49,22 @@ struct State {
     int tagIndex = -1; // user being asked about on the Tagging screen
     std::vector<std::string> messages;
     Screen afterResult = Screen::Main;
+    bool exiting = false;
+    BootStatus boot;
 };
 
 int wrap(int v, int n) {
     return ((v % n) + n) % n;
+}
+
+// Returning from main() on our own leaves ProcUI holding the foreground,
+// which shows as a blank screen. Ask the system to go back to the Wii U
+// Menu instead; WHBProcIsRunning() turns false once it has.
+void requestExit(State &s) {
+    if (!s.exiting) {
+        s.exiting = true;
+        SYSLaunchMenu();
+    }
 }
 
 void detectFirmware(State &s) {
@@ -192,7 +206,7 @@ void frameMain(State &s, uint32_t btn) {
         switch (s.cursor) {
         case 1: applyNetwork(s, s.selNet); return;
         case 2: s.screen = Screen::Accounts; s.cursor = 0; return;
-        case 3: WHBProcStopRunning(); return;
+        case 3: requestExit(s); return;
         default: break;
         }
     }
@@ -208,6 +222,16 @@ void frameMain(State &s, uint32_t btn) {
     } else if (s.ipx.ssl_mode != s.wantedSslMode) {
         ui::line(10, "Note: SSL patch site does not match this firmware;");
         ui::line(11, "      Apply will correct it.");
+    }
+    if (!s.boot.readable) {
+        ui::line(13, "This boot: patch status unavailable (no Mocha access)");
+    } else {
+        char buf[80];
+        snprintf(buf, sizeof(buf), "This boot: %s, SSL patch %s (%08lX @ %08lX)",
+                 s.boot.network >= 0 ? networkName(s.boot.network) : "unknown",
+                 s.boot.sslPatched ? "ACTIVE" : "MISSING",
+                 (unsigned long)s.boot.sslWord, (unsigned long)s.boot.sslAddr);
+        ui::line(13, buf);
     }
     ui::line(15, "Up/Down: move   Left/Right: change   A: select");
     ui::end();
@@ -324,8 +348,8 @@ void frameResult(State &s, uint32_t btn) {
 }
 
 void frameFatal(State &s, uint32_t btn) {
-    if (btn & (VPAD_BUTTON_A | VPAD_BUTTON_B | VPAD_BUTTON_HOME)) {
-        WHBProcStopRunning();
+    if (btn & (VPAD_BUTTON_A | VPAD_BUTTON_B)) {
+        requestExit(s);
         return;
     }
     ui::begin();
@@ -343,6 +367,9 @@ void frameFatal(State &s, uint32_t btn) {
 int main(int argc, char **argv) {
     WHBProcInit();
     if (!ui::init()) {
+        SYSLaunchMenu();
+        while (WHBProcIsRunning()) {
+        }
         WHBProcShutdown();
         return 0;
     }
@@ -359,6 +386,7 @@ int main(int argc, char **argv) {
         s.messages = {"Could not start:", err};
         s.screen = Screen::Fatal;
     } else {
+        s.boot = readBootStatus(s.wantedSslMode);
         s.users = enumerateUsers();
         s.tagIndex = nextUntagged(s);
         if (s.tagIndex >= 0) {
@@ -367,6 +395,9 @@ int main(int argc, char **argv) {
     }
 
     while (WHBProcIsRunning()) {
+        if (s.exiting) {
+            continue; // let ProcUI finish handing back to the menu
+        }
         uint32_t btn = ui::pressed();
         switch (s.screen) {
         case Screen::Tagging:  frameTagging(s, btn); break;

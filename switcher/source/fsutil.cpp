@@ -53,21 +53,21 @@ bool copyFile(const std::string &from, const std::string &to) {
 }
 
 bool makeDirs(const std::string &path) {
-    // Skip the device prefix ("fs:/vol/external01") when creating parents.
+    // Mount points such as fs:/vol and fs:/vol/external01 can't be stat'ed
+    // or created, so failures on parents are ignored; only the final
+    // directory has to exist when we are done.
     size_t start = path.find(":/");
     start = (start == std::string::npos) ? 0 : start + 2;
-    for (size_t pos = path.find('/', start); ; pos = path.find('/', pos + 1)) {
-        std::string part = (pos == std::string::npos) ? path : path.substr(0, pos);
-        if (!part.empty() && !exists(part)) {
-            if (mkdir(part.c_str(), 0777) != 0 && errno != EEXIST) {
-                return false;
-            }
-        }
-        if (pos == std::string::npos) {
-            break;
+    for (size_t pos = path.find('/', start); pos != std::string::npos; pos = path.find('/', pos + 1)) {
+        std::string part = path.substr(0, pos);
+        if (!exists(part)) {
+            mkdir(part.c_str(), 0777);
         }
     }
-    return true;
+    if (!exists(path)) {
+        mkdir(path.c_str(), 0777);
+    }
+    return exists(path);
 }
 
 bool readText(const std::string &path, std::string &out) {
