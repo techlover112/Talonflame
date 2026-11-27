@@ -1,0 +1,10 @@
+# Image tags match BrewtendoNetwork/Bnkay's Dockerfile (no WUPS needed: module only)
+FROM ghcr.io/wiiu-env/devkitppc:20260504
+
+COPY --from=ghcr.io/wiiu-env/libnotifications:20260404  /artifacts $DEVKITPRO
+COPY --from=ghcr.io/wiiu-env/libfunctionpatcher:20260331 /artifacts $DEVKITPRO
+COPY --from=ghcr.io/wiiu-env/libkernel:20260331 /artifacts $DEVKITPRO
+COPY --from=ghcr.io/wiiu-env/libmocha:20260331 /artifacts $DEVKITPRO
+COPY --from=ghcr.io/wiiu-env/wiiumodulesystem:20260418 /artifacts $DEVKITPRO
+
+WORKDIR /project

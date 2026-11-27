@@ -1,0 +1,4 @@
+build/
+*.wms
+*.elf
+*.map

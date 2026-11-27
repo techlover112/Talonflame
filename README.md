@@ -6,6 +6,18 @@ Brewtendo/Pretendo network patches for Wii U consoles running **ISFShax**, plus 
 |---|---|---|
 | `wafel_inkay` | A stroopwafel plugin (`.ipx`). It applies Inkay's IOSU-side patches (network URLs and the SSL certificate-check patch) once at boot, before IOSU starts. | `sd:/wiiu/ios_plugins/wafel_inkay.ipx` |
 | `switcher` | **Talonflame Switcher**, an Aroma app (`.wuhb`). It picks the boot network and swaps each user's `account.dat`. | `sd:/wiiu/apps/talonflame/talonflame.wuhb` |
+| `companion` | **Talonflame Companion**, an Aroma module (`.wms`). It applies Inkay's patches to the Wii U's own software: DNS, eShop, Miiverse, account settings, and game matchmaking and peer-to-peer. | `sd:/wiiu/environments/aroma/modules/talonflame_companion.wms` |
+
+### Replacing Inkay or Bnkay
+
+The plugin and the companion together replace Inkay or Bnkay, so remove those before installing Talonflame:
+
+- `sd:/wiiu/environments/aroma/plugins/Bnkay-brewtendo.wps` or `Inkay-pretendo.wps`
+- `sd:/wiiu/environments/aroma/modules/Inkay-pretendo.wms`
+
+Bnkay's module is also named `Inkay-pretendo.wms`. If either one stays installed, it reapplies its own network after boot, and the switcher's choice won't fully take effect.
+
+The companion has no settings of its own. At startup it reads back the hostname the plugin patched into IOSU memory, then applies the matching network's patches. If it finds no patched hostname, it applies nothing (Nintendo Network). This means the two halves always agree for the current boot.
 
 The URLs come from [BrewtendoNetwork/Bnkay](https://github.com/BrewtendoNetwork/Bnkay) (Brewtendo) and [PretendoNetwork/Inkay](https://github.com/PretendoNetwork/Inkay) (Pretendo). TVii is intentionally not handled; a separate app patches it.
 
@@ -87,10 +99,15 @@ docker build wafel_inkay -t wafel-builder && docker run --rm -v "$PWD:/project" 
 docker build switcher -t switcher-builder && docker run --rm -v "$PWD:/project" -w /project/switcher switcher-builder make
 ```
 
+```bash
+docker build companion -t companion-builder && docker run --rm -v "$PWD:/project" -w /project/companion companion-builder make
+```
+
 ## Not yet tested on hardware
 
 - The account-API string search assumes the original string exists verbatim in fw.img. The boot log line `replaced N occurrence(s)` shows whether it was found; check it on a serial or debug console.
 - Whether IOS-ACT ever writes its in-memory copy back over a swapped `account.dat` before the power cycle. If a swap doesn't stick, restore the slot again and power off right away.
+- The companion installs its function patches when the module starts. Bnkay installed them later, when its settings plugin loaded.
 
 ## License
 

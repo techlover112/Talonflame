@@ -60,8 +60,27 @@ jobs:
           path: switcher/talonflame.wuhb
           if-no-files-found: error
 
+  companion:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build companion -t companion-builder
+
+      - name: Build talonflame_companion.wms
+        run: |
+          docker run --rm -v "${PWD}:/project" -w /project/companion companion-builder \
+            /bin/bash -c "make -j$(nproc)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: talonflame-companion
+          path: companion/talonflame_companion.wms
+          if-no-files-found: error
+
   release:
-    needs: [wafel_inkay, switcher]
+    needs: [wafel_inkay, switcher, companion]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     steps:
@@ -71,9 +90,10 @@ jobs:
 
       - name: Assemble SD card layout
         run: |
-          mkdir -p sd/wiiu/ios_plugins sd/wiiu/apps/talonflame
+          mkdir -p sd/wiiu/ios_plugins sd/wiiu/apps/talonflame sd/wiiu/environments/aroma/modules
           cp artifacts/wafel_inkay/wafel_inkay.ipx sd/wiiu/ios_plugins/
           cp artifacts/talonflame-switcher/talonflame.wuhb sd/wiiu/apps/talonflame/
+          cp artifacts/talonflame-companion/talonflame_companion.wms sd/wiiu/environments/aroma/modules/
           (cd sd && zip -r ../Talonflame-${GITHUB_REF_NAME}.zip wiiu)
 
       - uses: softprops/action-gh-release@v2
@@ -84,3 +104,4 @@ jobs:
             Talonflame-*.zip
             artifacts/wafel_inkay/wafel_inkay.ipx
             artifacts/talonflame-switcher/talonflame.wuhb
+            artifacts/talonflame-companion/talonflame_companion.wms
