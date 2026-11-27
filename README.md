@@ -1,3 +1,5 @@
+> [!IMPORTANT]
+> Be warned that this is **entirely** AI generated. While I am working to confirm its functionality, there may be bugs I am unable to fix on my own.
 # Talonflame
 
 Brewtendo/Pretendo network patches for Wii U consoles running **ISFShax**, plus an Aroma app to switch networks and accounts.
