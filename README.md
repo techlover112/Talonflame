@@ -38,6 +38,18 @@ The URLs come from [BrewtendoNetwork/Bnkay](https://github.com/BrewtendoNetwork/
 
 The profile is stored in a small config block inside `wafel_inkay.ipx` (see `wafel_inkay/source/tlnf_config.h`). The switcher rewrites that block in place on the SD card. Patches are applied at boot, so **a change only takes effect after powering the console off and back on**.
 
+## Standby mode
+
+After you turn the console off, it enters standby mode (yellow power light) a few minutes later. In standby, only IOSU runs, so it can handle SpotPass and background eShop downloads. Aroma never starts in standby, so Aroma-based patchers like Inkay and Bnkay can't patch it.
+
+`wafel_inkay` patches IOSU every time it boots, standby included. So in standby, the console gets:
+
+- the SSL certificate-check patch (confirmed working on hardware)
+- the eShop backend URLs: ECS, NUS, IAS, CAS, tagaya and PLS
+- the SpotPass URLs: task sheets, the policy-list host, npns, pushmo and npvk
+
+The companion only patches apps that run on the main Wii U processor, so it isn't needed in standby.
+
 The shipped default profile is **Brewtendo**.
 
 ## How the plugin differs from Inkay
