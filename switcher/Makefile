@@ -42,7 +42,7 @@ LDFLAGS	=	-g $(ARCH) $(RPXSPECS) -Wl,-Map,$(notdir $*.map)
 
 LIBS	:=	-lmocha -lwut
 
-LIBDIRS	:=	$(PORTLIBS) $(WUMS_ROOT) $(WUT_ROOT)
+LIBDIRS	:=	$(PORTLIBS) $(WUT_ROOT)/usr $(WUMS_ROOT) $(WUT_ROOT)
 
 #-------------------------------------------------------------------------------
 ifneq ($(BUILD),$(notdir $(CURDIR)))
