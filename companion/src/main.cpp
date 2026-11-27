@@ -105,23 +105,6 @@ Network detectNetwork() {
     return Network::Nintendo;
 }
 
-// Runtime fallback for the SSL patch, as Inkay applies it. wafel_inkay
-// normally writes this at boot; if it is not present, apply it here.
-// Applied for every network, Nintendo included.
-void ensureSslPatch() {
-    MCPSystemVersion ver = get_console_os_version();
-    bool is555 = ver.major == 5 && ver.minor == 5 && ver.patch >= 5;
-    uint32_t addr = is555 ? 0xE1019F78 : 0xE1019E84;
-
-    uint32_t current = 0;
-    if (Mocha_IOSUKernelRead32(addr, &current) == MOCHA_RESULT_SUCCESS && current == 0xE3A00001) {
-        DEBUG_FUNCTION_LINE("SSL patch already present from boot");
-        return;
-    }
-    Mocha_IOSUKernelWrite32(addr, 0xE3A00001); // mov r0, #1
-    DEBUG_FUNCTION_LINE("SSL patch was missing; applied at runtime (was %08X)", current);
-}
-
 const char *networkMessage(Network net) {
     auto strings = get_config_strings(get_system_language());
     switch (net) {
@@ -145,7 +128,6 @@ WUMS_INITIALIZE() {
         DEBUG_FUNCTION_LINE("NotificationModule_InitLibrary failed");
     }
 
-    ensureSslPatch();
     gNetwork = detectNetwork();
 
     // Bnkay's patch code reads these two flags at runtime.
