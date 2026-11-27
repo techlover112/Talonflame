@@ -30,7 +30,7 @@
 
 #ifndef BASEURL_REESHOP
 // depricated, since well it didnt work like i intended it.
-#define BASEURL_REESHOP "reeshop.net"
+#define BASEURL_REESHOP "theelijohnson.cc"
 
 #endif
 
