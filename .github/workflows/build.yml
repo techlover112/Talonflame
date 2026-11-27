@@ -1,0 +1,86 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  # wafel_core headers the plugin is compiled against (symbols resolve at boot)
+  STROOPWAFEL_REPO: StroopwafelCFW/stroopwafel
+  STROOPWAFEL_REF: f25549da89ebe967bc9e452434ca77f4884b66ff
+
+jobs:
+  wafel_inkay:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.STROOPWAFEL_REPO }}
+          ref: ${{ env.STROOPWAFEL_REF }}
+          path: stroopwafel
+
+      - name: Build Docker image
+        run: docker build wafel_inkay -t wafel-builder
+
+      - name: Build wafel_inkay.ipx
+        run: |
+          docker run --rm -v "${PWD}:/project" -w /project/wafel_inkay wafel-builder \
+            /bin/bash -c "export STROOPWAFEL_ROOT=/project/stroopwafel && make -j$(nproc)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wafel_inkay
+          path: wafel_inkay/wafel_inkay.ipx
+          if-no-files-found: error
+
+  switcher:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build switcher -t switcher-builder
+
+      - name: Build talonflame.wuhb
+        run: |
+          docker run --rm -v "${PWD}:/project" -w /project/switcher switcher-builder \
+            /bin/bash -c "make -j$(nproc)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: talonflame-switcher
+          path: switcher/talonflame.wuhb
+          if-no-files-found: error
+
+  release:
+    needs: [wafel_inkay, switcher]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Assemble SD card layout
+        run: |
+          mkdir -p sd/wiiu/ios_plugins sd/wiiu/apps/talonflame
+          cp artifacts/wafel_inkay/wafel_inkay.ipx sd/wiiu/ios_plugins/
+          cp artifacts/talonflame-switcher/talonflame.wuhb sd/wiiu/apps/talonflame/
+          (cd sd && zip -r ../Talonflame-${GITHUB_REF_NAME}.zip wiiu)
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: |
+            Talonflame-*.zip
+            artifacts/wafel_inkay/wafel_inkay.ipx
+            artifacts/talonflame-switcher/talonflame.wuhb

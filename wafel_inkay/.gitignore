@@ -1,0 +1,4 @@
+build/
+*.ipx
+*.elf
+*.map

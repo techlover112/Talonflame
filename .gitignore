@@ -1,0 +1,4 @@
+# local reference clones (not part of the project)
+refs/
+stroopwafel/
+.DS_Store
