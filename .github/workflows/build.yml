@@ -19,9 +19,9 @@ jobs:
   wafel_inkay:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: ${{ env.STROOPWAFEL_REPO }}
           ref: ${{ env.STROOPWAFEL_REF }}
@@ -35,7 +35,7 @@ jobs:
           docker run --rm -v "${PWD}:/project" -w /project/wafel_inkay wafel-builder \
             /bin/bash -c "export STROOPWAFEL_ROOT=/project/stroopwafel && make -j$(nproc)"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: wafel_inkay
           path: wafel_inkay/wafel_inkay.ipx
@@ -44,7 +44,7 @@ jobs:
   switcher:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build Docker image
         run: docker build switcher -t switcher-builder
@@ -54,7 +54,7 @@ jobs:
           docker run --rm -v "${PWD}:/project" -w /project/switcher switcher-builder \
             /bin/bash -c "make -j$(nproc)"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: talonflame-switcher
           path: switcher/talonflame.wuhb
@@ -63,7 +63,7 @@ jobs:
   companion:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build Docker image
         run: docker build companion -t companion-builder
@@ -73,7 +73,7 @@ jobs:
           docker run --rm -v "${PWD}:/project" -w /project/companion companion-builder \
             /bin/bash -c "make -j$(nproc)"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: talonflame-companion
           path: companion/talonflame_companion.wms
@@ -84,7 +84,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
 
@@ -96,7 +96,7 @@ jobs:
           cp artifacts/talonflame-companion/talonflame_companion.wms sd/wiiu/environments/aroma/modules/
           (cd sd && zip -r ../Talonflame-${GITHUB_REF_NAME}.zip wiiu)
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           draft: true
           generate_release_notes: true
